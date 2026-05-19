@@ -539,6 +539,33 @@
             font-weight: 500;
         }
 
+        /* 发起对比按钮 */
+        .start-compare-btn {
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .start-compare-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .start-compare-btn:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
         /* 移动端适配 */
         @media (max-width: 768px) {
             .container {
@@ -844,6 +871,9 @@
                         </div>
                     </div>
                 </div>
+                <button class="start-compare-btn" id="start-compare-btn" onclick="openFullscreenCompare()" disabled>
+                    🔍 发起对比
+                </button>
             </div>
 
             <!-- 预设组 -->
@@ -896,10 +926,6 @@
             <span class="tab-icon">🖼️</span>
             <span class="tab-text">预设</span>
         </div>
-        <div class="tab-item" onclick="openFullscreenCompare()">
-            <span class="tab-icon">🔍</span>
-            <span class="tab-text">对比</span>
-        </div>
     </div>
 
     <!-- 全屏对比 -->
@@ -911,7 +937,7 @@
         <div class="compare-sides">
             <div class="compare-side-panel">
                 <div class="side-panel-header">
-                    <span>对比组 A</span>
+                    <span id="fullscreen-label-0">对比组 A</span>
                     <span id="fullscreen-count-0">0张</span>
                 </div>
                 <div class="side-panel-content" id="fullscreen-photos-0">
@@ -923,7 +949,7 @@
             </div>
             <div class="compare-side-panel">
                 <div class="side-panel-header b">
-                    <span>对比组 B</span>
+                    <span id="fullscreen-label-1">对比组 B</span>
                     <span id="fullscreen-count-1">0张</span>
                 </div>
                 <div class="side-panel-content" id="fullscreen-photos-1">
@@ -1085,6 +1111,14 @@
                 }
                 photosEl.innerHTML = html;
             }
+
+            // 更新发起对比按钮状态 - 两组都有照片时才可点击
+            const compareBtn = document.getElementById('start-compare-btn');
+            if (compareBtn) {
+                const canCompare = slots[0].length > 0 && slots[1].length > 0;
+                compareBtn.disabled = !canCompare;
+            }
+
             Storage.set('compareSlots', slots);
             Storage.set('slotNames', slotNames);
         }
@@ -1438,11 +1472,14 @@
 
         // ==================== 全屏对比 ====================
         function openFullscreenCompare() {
-            if (slots[0].length === 0 && slots[1].length === 0) {
-                alert('请先添加照片到对比组');
+            // 两组都有照片才能打开
+            if (slots[0].length === 0 || slots[1].length === 0) {
+                alert('需要两组都有照片才能对比');
                 return;
             }
 
+            document.getElementById('fullscreen-label-0').textContent = slotNames[0] || '对比组 A';
+            document.getElementById('fullscreen-label-1').textContent = slotNames[1] || '对比组 B';
             document.getElementById('fullscreen-count-0').textContent = `${slots[0].length}张`;
             document.getElementById('fullscreen-count-1').textContent = `${slots[1].length}张`;
 
