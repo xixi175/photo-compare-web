@@ -1234,7 +1234,7 @@
                             <button class="add-preset-btn" onclick="addToPreset(${queue.id})">添加到预设</button>
                         ` : ''}
                     </div>
-                    <input type="file" id="file-input-${queue.id}" multiple accept="image/jpeg,image/png,image/gif,image/webp" capture="environment" onchange="handleUpload(${queue.id}, this)">
+                    <input type="file" id="file-input-${queue.id}" multiple accept="image/*" onchange="handleUpload(${queue.id}, this)">
                 </div>
             `}).join('');
         }
@@ -1291,9 +1291,9 @@
             const toProcess = files.slice(0, remaining);
 
             // 显示加载中
-            const uploadBtn = input.parentElement.querySelector('.upload-placeholder');
-            if (uploadBtn) {
-                uploadBtn.innerHTML = '<div class="icon">⏳</div><div class="text">处理中...</div>';
+            const uploadPlaceholder = input.parentElement.querySelector('.upload-placeholder');
+            if (uploadPlaceholder) {
+                uploadPlaceholder.innerHTML = '<div class="icon">⏳</div><div class="text">压缩中...</div>';
             }
 
             try {
@@ -1306,14 +1306,9 @@
                         continue;
                     }
 
-                    // 检查文件大小（限制 5MB）
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert(`图片 ${file.name} 太大，已跳过（最大5MB）`);
-                        continue;
-                    }
-
-                    const dataUrl = await readFileAsDataURL(file);
-                    queue.photos.push(dataUrl);
+                    // 压缩图片
+                    const compressedDataUrl = await compressImage(file);
+                    queue.photos.push(compressedDataUrl);
                 }
 
                 saveQueues();
@@ -1344,6 +1339,55 @@
 
                 reader.onabort = function() {
                     reject(new Error('读取被取消'));
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 压缩图片
+        function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    const img = new Image();
+
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+
+                        // 计算缩放比例
+                        if (width > maxWidth || height > maxHeight) {
+                            const ratio = Math.min(maxWidth / width, maxHeight / height);
+                            width = Math.floor(width * ratio);
+                            height = Math.floor(height * ratio);
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // 转换为 JPEG 压缩
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                        console.log('Compressed:', file.size, '->', Math.round(compressedDataUrl.length * 0.75), 'bytes');
+
+                        resolve(compressedDataUrl);
+                    };
+
+                    img.onerror = function() {
+                        reject(new Error('图片加载失败'));
+                    };
+
+                    img.src = e.target.result;
+                };
+
+                reader.onerror = function() {
+                    reject(new Error('读取文件失败'));
                 };
 
                 reader.readAsDataURL(file);
