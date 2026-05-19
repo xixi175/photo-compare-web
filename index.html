@@ -497,46 +497,103 @@
             display: none;
         }
 
-        /* 底部操作栏 */
-        .bottom-bar {
+        /* 底部 Tab 导航 */
+        .tab-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: #fff;
-            padding: 16px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             display: flex;
-            justify-content: center;
-            gap: 20px;
+            justify-content: space-around;
+            padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.08);
             z-index: 100;
         }
 
-        .bottom-btn {
+        .tab-item {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
+            gap: 4px;
+            padding: 6px 20px;
             cursor: pointer;
-            border: none;
             transition: all 0.3s;
+            border-radius: 8px;
         }
 
-        .bottom-btn.primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: #fff;
+        .tab-item.active {
+            color: var(--primary);
         }
 
-        .bottom-btn.secondary {
-            background: var(--gray-200);
-            color: var(--gray-700);
+        .tab-item:not(.active) {
+            color: var(--gray-500);
         }
 
-        .bottom-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        .tab-icon {
+            font-size: 22px;
+        }
+
+        .tab-text {
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+                padding-bottom: 100px;
+            }
+
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 16px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .slot-label {
+                font-size: 14px;
+            }
+
+            .preset-groups {
+                gap: 12px;
+            }
+
+            .preset-group {
+                width: 120px;
+                padding: 12px;
+            }
+
+            .preset-preview {
+                width: 64px;
+                height: 64px;
+            }
+
+            .preset-name {
+                font-size: 13px;
+            }
+
+            .queue-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .queue-name-input {
+                width: 100%;
+            }
+
+            .queue-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
         }
 
         /* 空状态 */
@@ -740,15 +797,10 @@
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
+    <!-- 顶部标题栏 -->
     <nav class="navbar">
         <div class="navbar-content">
             <div class="logo">📸 照片风格对比</div>
-            <div class="nav-tabs">
-                <div class="nav-tab active" onclick="switchPage('home')">首页</div>
-                <div class="nav-tab" onclick="switchPage('queues')">队列</div>
-                <div class="nav-tab" onclick="switchPage('presets')">预设</div>
-            </div>
         </div>
     </nav>
 
@@ -830,16 +882,24 @@
         </div>
     </div>
 
-    <!-- 底部操作栏 -->
-    <div class="bottom-bar">
-        <button class="bottom-btn secondary" onclick="clearAll()">
-            <span>🗑️</span>
-            <span>清空全部</span>
-        </button>
-        <button class="bottom-btn primary" onclick="openFullscreenCompare()">
-            <span>🔍</span>
-            <span>全屏对比</span>
-        </button>
+    <!-- 底部 Tab 导航 -->
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchPage('home', this)">
+            <span class="tab-icon">🏠</span>
+            <span class="tab-text">首页</span>
+        </div>
+        <div class="tab-item" onclick="switchPage('queues', this)">
+            <span class="tab-icon">📋</span>
+            <span class="tab-text">队列</span>
+        </div>
+        <div class="tab-item" onclick="switchPage('presets', this)">
+            <span class="tab-icon">🖼️</span>
+            <span class="tab-text">预设</span>
+        </div>
+        <div class="tab-item" onclick="openFullscreenCompare()">
+            <span class="tab-icon">🔍</span>
+            <span class="tab-text">对比</span>
+        </div>
     </div>
 
     <!-- 全屏对比 -->
@@ -972,12 +1032,21 @@
         }
 
         // ==================== 页面切换 ====================
-        function switchPage(page) {
+        function switchPage(page, element) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
 
             document.getElementById(`page-${page}`).classList.add('active');
-            event.target.classList.add('active');
+
+            // 如果传入了元素，激活该元素；否则根据 page 找到对应 tab
+            if (element) {
+                element.classList.add('active');
+            } else {
+                const tabIndex = ['home', 'queues', 'presets'].indexOf(page);
+                if (tabIndex >= 0) {
+                    document.querySelectorAll('.tab-item')[tabIndex].classList.add('active');
+                }
+            }
 
             if (page === 'presets') {
                 renderPresetsList();
@@ -1076,18 +1145,17 @@
                 return;
             }
 
-            container.innerHTML = queues.map((queue, idx) => `
+            container.innerHTML = queues.map((queue, idx) => {
+                const hasSpace = hasEmptySlot();
+                const canAdd = hasSpace && queue.photos.length > 0;
+                return `
                 <div class="queue-item">
                     <div class="queue-header">
                         <input type="text" class="queue-name-input" value="${queue.name}"
                             onchange="updateQueueName(${queue.id}, this.value)">
                         <div class="queue-actions">
-                            <select class="target-select" onchange="updateTargetSlot(${queue.id}, this.value)">
-                                <option value="0" ${queue.targetSlot === 0 ? 'selected' : ''}>添加到 A</option>
-                                <option value="1" ${queue.targetSlot === 1 ? 'selected' : ''}>添加到 B</option>
-                            </select>
-                            <button class="add-compare-btn" onclick="addToCompare(${queue.id})" ${queue.photos.length === 0 ? 'disabled' : ''}>
-                                添加对比
+                            <button class="add-compare-btn" onclick="addToCompare(${queue.id})" ${canAdd ? '' : 'disabled'}>
+                                ${canAdd ? '添加对比' : (hasSpace ? '空队列' : '已满')}
                             </button>
                             <button class="delete-queue-btn" onclick="deleteQueue(${queue.id})">删除</button>
                         </div>
@@ -1116,7 +1184,7 @@
                     </div>
                     <input type="file" id="file-input-${queue.id}" multiple accept="image/*" onchange="handleUpload(${queue.id}, this)">
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function addQueue() {
@@ -1145,13 +1213,6 @@
             }
         }
 
-        function updateTargetSlot(id, value) {
-            const queue = queues.find(q => q.id === id);
-            if (queue) {
-                queue.targetSlot = parseInt(value);
-                saveQueues();
-            }
-        }
 
         function triggerUpload(queueId) {
             document.getElementById(`file-input-${queueId}`).click();
@@ -1205,24 +1266,29 @@
             const queue = queues.find(q => q.id === queueId);
             if (!queue || queue.photos.length === 0) return;
 
-            const targetSlot = queue.targetSlot;
-            const availableSpace = 5 - slots[targetSlot].length;
+            // 自动找到有空位的槽
+            const targetSlot = getAvailableSlotIndex();
 
-            if (availableSpace <= 0) {
-                alert(`${slotNames[targetSlot] || `对比组 ${targetSlot === 0 ? 'A' : 'B'}`}已满`);
+            if (targetSlot === -1) {
+                alert('两个对比组都已满，请先清空一个');
                 return;
             }
 
+            const availableSpace = 5 - slots[targetSlot].length;
             const photosToAdd = queue.photos.slice(0, availableSpace);
+
             slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
             slotNames[targetSlot] = queue.name; // 设置槽的名称为队列名称
             renderSlots();
             renderPresets(); // 更新预设组按钮状态
+            renderQueues(); // 更新队列按钮状态
 
             if (queue.photos.length > availableSpace) {
                 alert(`已添加${availableSpace}张到${queue.name}，组已满`);
             } else {
                 alert(`已添加${photosToAdd.length}张到${queue.name}`);
+                // 添加成功后切换到首页
+                switchPage('home', document.querySelector('.tab-item'));
             }
         }
 
