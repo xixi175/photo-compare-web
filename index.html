@@ -287,6 +287,28 @@
         .preset-count {
             font-size: 12px;
             color: #999;
+            margin-bottom: 8px;
+        }
+
+        .preset-add-btn {
+            width: 100%;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--success);
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-add-btn:hover:not(:disabled) {
+            background: #218838;
+        }
+
+        .preset-add-btn:disabled {
+            background: var(--gray-400);
+            cursor: not-allowed;
         }
 
         /* 队列样式 */
@@ -739,7 +761,7 @@
                 <div class="compare-grid">
                     <div class="compare-slot" id="slot-0">
                         <div class="slot-header">
-                            <span class="slot-label">对比组 A</span>
+                            <span class="slot-label" id="slot-label-0">对比组 A</span>
                             <div class="slot-actions">
                                 <span class="slot-count" id="count-0">0/5</span>
                                 <span class="clear-btn" onclick="clearSlot(0)">清空</span>
@@ -755,7 +777,7 @@
                     </div>
                     <div class="compare-slot" id="slot-1">
                         <div class="slot-header">
-                            <span class="slot-label">对比组 B</span>
+                            <span class="slot-label" id="slot-label-1">对比组 B</span>
                             <div class="slot-actions">
                                 <span class="slot-count" id="count-1">0/5</span>
                                 <span class="clear-btn" onclick="clearSlot(1)">清空</span>
@@ -873,6 +895,7 @@
 
         // ==================== 全局状态 ====================
         let slots = Storage.get('compareSlots') || [[], []];
+        let slotNames = Storage.get('slotNames') || ['对比组 A', '对比组 B']; // 存储每个槽的名称
         let queues = Storage.get('queues') || [];
         let presetGroups = Storage.get('presetGroups') || [];
         let currentModalImages = [];
@@ -967,8 +990,10 @@
                 const slotEl = document.getElementById(`slot-${i}`);
                 const photosEl = document.getElementById(`slot-photos-${i}`);
                 const countEl = document.getElementById(`count-${i}`);
+                const labelEl = document.getElementById(`slot-label-${i}`);
 
                 countEl.textContent = `${slots[i].length}/5`;
+                labelEl.textContent = slotNames[i] || `对比组 ${i === 0 ? 'A' : 'B'}`;
 
                 if (slots[i].length > 0) {
                     slotEl.classList.add('active');
@@ -992,6 +1017,7 @@
                 photosEl.innerHTML = html;
             }
             Storage.set('compareSlots', slots);
+            Storage.set('slotNames', slotNames);
         }
 
         function removeFromSlot(slotIndex, photoIndex) {
@@ -1001,8 +1027,10 @@
 
         function clearSlot(index) {
             if (slots[index].length === 0) return;
-            if (confirm(`确定要清空对比组 ${index === 0 ? 'A' : 'B'} 吗？`)) {
+            const currentName = slotNames[index] || `对比组 ${index === 0 ? 'A' : 'B'}`;
+            if (confirm(`确定要清空${currentName}吗？`)) {
                 slots[index] = [];
+                slotNames[index] = `对比组 ${index === 0 ? 'A' : 'B'}`;
                 renderSlots();
             }
         }
@@ -1011,7 +1039,9 @@
             if (slots[0].length === 0 && slots[1].length === 0) return;
             if (confirm('确定要清空所有对比组吗？')) {
                 slots = [[], []];
+                slotNames = ['对比组 A', '对比组 B'];
                 renderSlots();
+                renderPresets();
             }
         }
 
@@ -1173,18 +1203,20 @@
             const availableSpace = 5 - slots[targetSlot].length;
 
             if (availableSpace <= 0) {
-                alert(`对比组 ${targetSlot === 0 ? 'A' : 'B'} 已满`);
+                alert(`${slotNames[targetSlot] || `对比组 ${targetSlot === 0 ? 'A' : 'B'}`}已满`);
                 return;
             }
 
             const photosToAdd = queue.photos.slice(0, availableSpace);
             slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
+            slotNames[targetSlot] = queue.name; // 设置槽的名称为队列名称
             renderSlots();
+            renderPresets(); // 更新预设组按钮状态
 
             if (queue.photos.length > availableSpace) {
-                alert(`已添加${availableSpace}张，对比组已满`);
+                alert(`已添加${availableSpace}张到${queue.name}，组已满`);
             } else {
-                alert('添加成功！');
+                alert(`已添加${photosToAdd.length}张到${queue.name}`);
             }
         }
 
@@ -1198,26 +1230,48 @@
         }
 
         // ==================== 预设组 ====================
+        function hasEmptySlot() {
+            return slots[0].length < 5 || slots[1].length < 5;
+        }
+
+        function getAvailableSlotIndex() {
+            if (slots[0].length < 5) return 0;
+            if (slots[1].length < 5) return 1;
+            return -1;
+        }
+
         function renderPresets() {
             const container = document.getElementById('preset-groups');
-            container.innerHTML = presetGroups.map(group => `
+            const hasSpace = hasEmptySlot();
+
+            container.innerHTML = presetGroups.map(group => {
+                const canAdd = hasSpace;
+                return `
                 <div class="preset-group" onclick="usePreset(${group.id})">
                     <div class="preset-preview">
                         <img src="${group.photos[0]}" alt="${group.name}">
                     </div>
                     <div class="preset-name">${group.name}</div>
                     <div class="preset-count">${group.photos.length}张</div>
+                    <button class="preset-add-btn" onclick="event.stopPropagation(); addPresetToCompare(${group.id})" ${canAdd ? '' : 'disabled'}>
+                        ${canAdd ? '添加对比' : '已满'}
+                    </button>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function renderPresetsList() {
             const container = document.getElementById('presets-container');
-            container.innerHTML = presetGroups.map(group => `
+            container.innerHTML = presetGroups.map(group => {
+                const targetSlot = getAvailableSlotIndex();
+                const canAdd = targetSlot !== -1;
+                return `
                 <div class="card" style="margin-bottom: 16px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h3 style="font-size: 18px;">${group.name}</h3>
-                        <button class="add-compare-btn" onclick="usePreset(${group.id})">使用此组</button>
+                        <button class="add-compare-btn" onclick="usePresetFromList(${group.id})" ${canAdd ? '' : 'disabled'}>
+                            ${canAdd ? '使用此组' : '已满'}
+                        </button>
                     </div>
                     <div class="queue-photos">
                         ${group.photos.map(photo => `
@@ -1227,30 +1281,87 @@
                         `).join('')}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
+        }
+
+        function usePresetFromList(groupId) {
+            const group = presetGroups.find(g => g.id === groupId);
+            if (!group) return;
+
+            const targetSlot = getAvailableSlotIndex();
+
+            if (targetSlot === -1) {
+                alert('两个对比组都已满');
+                return;
+            }
+
+            const availableSpace = 5 - slots[targetSlot].length;
+            const photosToAdd = group.photos.slice(0, availableSpace);
+
+            slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
+            slotNames[targetSlot] = group.name;
+            renderSlots();
+            renderPresets();
+            renderPresetsList();
+
+            if (photosToAdd.length < group.photos.length) {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+            } else {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+            }
         }
 
         function usePreset(groupId) {
             const group = presetGroups.find(g => g.id === groupId);
             if (!group) return;
 
-            const target = prompt('添加到哪个对比组？输入 0 为 A，1 为 B:', '0');
-            if (target !== '0' && target !== '1') return;
+            // 自动找到有空位的槽
+            const targetSlot = getAvailableSlotIndex();
 
-            const targetSlot = parseInt(target);
-            const availableSpace = 5 - slots[targetSlot].length;
-
-            if (availableSpace <= 0) {
-                alert(`对比组 ${targetSlot === 0 ? 'A' : 'B'} 已满`);
+            if (targetSlot === -1) {
+                alert('两个对比组都已满，请先清空一个');
                 return;
             }
 
+            const availableSpace = 5 - slots[targetSlot].length;
             const photosToAdd = group.photos.slice(0, availableSpace);
-            slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
-            renderSlots();
 
-            alert(`已添加 ${photosToAdd.length} 张照片到对比组 ${targetSlot === 0 ? 'A' : 'B'}`);
-            switchPage('home');
+            slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
+            slotNames[targetSlot] = group.name; // 设置槽的名称为预设组名称
+            renderSlots();
+            renderPresets(); // 重新渲染预设组以更新按钮状态
+
+            if (photosToAdd.length < group.photos.length) {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+            } else {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+            }
+        }
+
+        function addPresetToCompare(groupId) {
+            const group = presetGroups.find(g => g.id === groupId);
+            if (!group) return;
+
+            const targetSlot = getAvailableSlotIndex();
+
+            if (targetSlot === -1) {
+                alert('两个对比组都已满');
+                return;
+            }
+
+            const availableSpace = 5 - slots[targetSlot].length;
+            const photosToAdd = group.photos.slice(0, availableSpace);
+
+            slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
+            slotNames[targetSlot] = group.name;
+            renderSlots();
+            renderPresets();
+
+            if (photosToAdd.length < group.photos.length) {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+            } else {
+                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+            }
         }
 
         // ==================== 全屏对比 ====================
