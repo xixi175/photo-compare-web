@@ -1022,7 +1022,12 @@
 
         function removeFromSlot(slotIndex, photoIndex) {
             slots[slotIndex].splice(photoIndex, 1);
+            // 如果删除后槽变为空，重置名称
+            if (slots[slotIndex].length === 0) {
+                slotNames[slotIndex] = `对比组 ${slotIndex === 0 ? 'A' : 'B'}`;
+            }
             renderSlots();
+            renderPresets(); // 删除照片后重新渲染预设组按钮状态
         }
 
         function clearSlot(index) {
@@ -1032,6 +1037,7 @@
                 slots[index] = [];
                 slotNames[index] = `对比组 ${index === 0 ? 'A' : 'B'}`;
                 renderSlots();
+                renderPresets(); // 清空后重新渲染预设组按钮状态
             }
         }
 
