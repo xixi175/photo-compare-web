@@ -581,6 +581,274 @@
             box-shadow: none;
         }
 
+        /* 对比队列区域 */
+        .compare-queue-list {
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .compare-queue-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 50px;
+            border: 2px dashed var(--gray-300);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--gray-100);
+        }
+
+        .compare-queue-empty:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .compare-queue-empty .icon {
+            font-size: 32px;
+            color: var(--gray-400);
+            margin-bottom: 8px;
+        }
+
+        .compare-queue-empty .text {
+            font-size: 14px;
+            color: var(--gray-500);
+        }
+
+        /* 队列选择浮层 */
+        .queue-selector-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1500;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .queue-selector-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .queue-selector-drawer {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            border-radius: 20px 20px 0 0;
+            z-index: 1501;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .queue-selector-drawer.active {
+            transform: translateY(0);
+        }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .drawer-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: var(--gray-500);
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .drawer-close:hover {
+            background: var(--gray-100);
+        }
+
+        .drawer-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .drawer-tab {
+            flex: 1;
+            padding: 14px;
+            text-align: center;
+            font-size: 15px;
+            color: var(--gray-500);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .drawer-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .drawer-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            max-height: 50vh;
+        }
+
+        .drawer-panel {
+            display: none;
+        }
+
+        .drawer-panel.active {
+            display: block;
+        }
+
+        .drawer-queue-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--gray-100);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .drawer-queue-item:hover {
+            background: #e8e8e8;
+        }
+
+        .drawer-queue-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .drawer-queue-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .drawer-queue-preview .placeholder {
+            font-size: 24px;
+        }
+
+        .drawer-queue-info {
+            flex: 1;
+        }
+
+        .drawer-queue-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .drawer-queue-count {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .drawer-queue-add {
+            padding: 8px 16px;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .drawer-queue-add:disabled {
+            background: var(--gray-400);
+        }
+
+        /* 已选择的队列显示 */
+        .selected-queues {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px;
+        }
+
+        .selected-queue-item {
+            display: flex;
+            align-items: center;
+            background: var(--gray-100);
+            border-radius: 12px;
+            padding: 8px 12px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .selected-queue-preview {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .selected-queue-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .selected-queue-info {
+            flex: 1;
+        }
+
+        .selected-queue-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .selected-queue-count {
+            font-size: 12px;
+            color: var(--gray-500);
+        }
+
+        .compare-queue-empty.small {
+            padding: 15px;
+            min-width: 60px;
+            min-height: 60px;
+        }
+
+        .compare-queue-empty.small .icon {
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+
         /* 移动端适配 */
         @media (max-width: 768px) {
             .container {
@@ -891,11 +1159,14 @@
                 </button>
             </div>
 
-            <!-- 预设组 -->
+            <!-- 对比队列 -->
             <div class="card">
-                <div class="section-title">预设照片组</div>
-                <div class="preset-groups" id="preset-groups">
-                    <!-- 动态生成 -->
+                <div class="section-title">对比队列</div>
+                <div class="compare-queue-list" id="compare-queue-list">
+                    <div class="compare-queue-empty" onclick="openQueueSelector()">
+                        <div class="icon">+</div>
+                        <div class="text">点击添加队列</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -980,6 +1251,27 @@
         <div class="modal-nav prev" onclick="navigateImage(event, -1)">‹</div>
         <img id="modal-image" src="" alt="">
         <div class="modal-nav next" onclick="navigateImage(event, 1)">›</div>
+    </div>
+
+    <!-- 队列选择浮层 -->
+    <div class="queue-selector-overlay" id="queue-selector-overlay" onclick="closeQueueSelector()"></div>
+    <div class="queue-selector-drawer" id="queue-selector-drawer">
+        <div class="drawer-header">
+            <h3>选择队列</h3>
+            <button class="drawer-close" onclick="closeQueueSelector()">×</button>
+        </div>
+        <div class="drawer-tabs">
+            <div class="drawer-tab active" onclick="switchDrawerTab('my-queues', this)">我的队列</div>
+            <div class="drawer-tab" onclick="switchDrawerTab('presets', this)">预设队列</div>
+        </div>
+        <div class="drawer-content">
+            <div id="drawer-my-queues" class="drawer-panel active">
+                <!-- 动态生成我的队列 -->
+            </div>
+            <div id="drawer-presets" class="drawer-panel">
+                <!-- 动态生成预设队列 -->
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1070,6 +1362,7 @@
             renderSlots();
             renderQueues();
             renderPresets();
+            renderCompareQueueList(); // 渲染对比队列区域
         }
 
         // ==================== 页面切换 ====================
@@ -1140,12 +1433,14 @@
 
         function removeFromSlot(slotIndex, photoIndex) {
             slots[slotIndex].splice(photoIndex, 1);
-            // 如果删除后槽变为空，重置名称
+            // 如果删除后槽变为空，重置名称和选择列表
             if (slots[slotIndex].length === 0) {
                 slotNames[slotIndex] = `对比组 ${slotIndex === 0 ? 'A' : 'B'}`;
+                selectedCompareQueues = selectedCompareQueues.filter(q => q.slot !== slotIndex);
+                renderCompareQueueList();
             }
             renderSlots();
-            renderPresets(); // 删除照片后重新渲染预设组按钮状态
+            renderPresets();
         }
 
         function clearSlot(index) {
@@ -1154,8 +1449,11 @@
             if (confirm(`确定要清空${currentName}吗？`)) {
                 slots[index] = [];
                 slotNames[index] = `对比组 ${index === 0 ? 'A' : 'B'}`;
+                // 从已选择列表中移除
+                selectedCompareQueues = selectedCompareQueues.filter(q => q.slot !== index);
                 renderSlots();
-                renderPresets(); // 清空后重新渲染预设组按钮状态
+                renderCompareQueueList();
+                renderPresets();
             }
         }
 
@@ -1164,7 +1462,9 @@
             if (confirm('确定要清空所有对比组吗？')) {
                 slots = [[], []];
                 slotNames = ['对比组 A', '对比组 B'];
+                selectedCompareQueues = []; // 清空已选择列表
                 renderSlots();
+                renderCompareQueueList();
                 renderPresets();
             }
         }
@@ -1647,6 +1947,158 @@
             if (currentModalIndex < 0) currentModalIndex = currentModalImages.length - 1;
             if (currentModalIndex >= currentModalImages.length) currentModalIndex = 0;
             document.getElementById('modal-image').src = currentModalImages[currentModalIndex];
+        }
+
+        // ==================== 队列选择浮层 ====================
+        let selectedCompareQueues = []; // 已选择到对比队列的队列
+
+        function openQueueSelector() {
+            document.getElementById('queue-selector-overlay').classList.add('active');
+            document.getElementById('queue-selector-drawer').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            renderDrawerContent();
+        }
+
+        function closeQueueSelector() {
+            document.getElementById('queue-selector-overlay').classList.remove('active');
+            document.getElementById('queue-selector-drawer').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function switchDrawerTab(tab, element) {
+            document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.drawer-panel').forEach(p => p.classList.remove('active'));
+
+            element.classList.add('active');
+            document.getElementById(`drawer-${tab}`).classList.add('active');
+        }
+
+        function renderDrawerContent() {
+            // 渲染我的队列
+            const myQueuesContainer = document.getElementById('drawer-my-queues');
+            if (queues.length === 0) {
+                myQueuesContainer.innerHTML = `
+                    <div class="empty-state" style="padding: 40px 20px;">
+                        <div class="icon">📋</div>
+                        <div class="text">暂无队列，请到队列页面创建</div>
+                    </div>
+                `;
+            } else {
+                myQueuesContainer.innerHTML = queues.map(queue => {
+                    const hasSpace = hasEmptySlot();
+                    return `
+                    <div class="drawer-queue-item" onclick="addQueueToCompare(${queue.id}, 'queue')">
+                        <div class="drawer-queue-preview">
+                            ${queue.photos.length > 0 ? `<img src="${queue.photos[0]}" alt="">` : '<div class="placeholder">📷</div>'}
+                        </div>
+                        <div class="drawer-queue-info">
+                            <div class="drawer-queue-name">${queue.name}</div>
+                            <div class="drawer-queue-count">${queue.photos.length} 张照片</div>
+                        </div>
+                        <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${queue.id}, 'queue')" ${!hasSpace || queue.photos.length === 0 ? 'disabled' : ''}>
+                            ${hasSpace && queue.photos.length > 0 ? '添加' : '已满'}
+                        </button>
+                    </div>
+                `}).join('');
+            }
+
+            // 渲染预设队列
+            const presetsContainer = document.getElementById('drawer-presets');
+            presetsContainer.innerHTML = presetGroups.map(group => {
+                const hasSpace = hasEmptySlot();
+                return `
+                <div class="drawer-queue-item" onclick="addQueueToCompare(${group.id}, 'preset')">
+                    <div class="drawer-queue-preview">
+                        <img src="${group.photos[0]}" alt="${group.name}">
+                    </div>
+                    <div class="drawer-queue-info">
+                        <div class="drawer-queue-name">${group.name}</div>
+                        <div class="drawer-queue-count">${group.photos.length} 张照片</div>
+                    </div>
+                    <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${group.id}, 'preset')" ${!hasSpace ? 'disabled' : ''}>
+                        ${hasSpace ? '添加' : '已满'}
+                    </button>
+                </div>
+            `}).join('');
+        }
+
+        function addQueueToCompare(id, type) {
+            const targetSlot = getAvailableSlotIndex();
+            if (targetSlot === -1) {
+                alert('对比队列已满');
+                return;
+            }
+
+            let source;
+            if (type === 'queue') {
+                source = queues.find(q => q.id === id);
+            } else {
+                source = presetGroups.find(g => g.id === id);
+            }
+
+            if (!source || source.photos.length === 0) {
+                alert('队列为空');
+                return;
+            }
+
+            const availableSpace = 5 - slots[targetSlot].length;
+            const photosToAdd = source.photos.slice(0, availableSpace);
+
+            slots[targetSlot] = [...slots[targetSlot], ...photosToAdd];
+            slotNames[targetSlot] = source.name;
+
+            // 记录已选择的队列
+            selectedCompareQueues.push({
+                name: source.name,
+                photos: photosToAdd,
+                slot: targetSlot
+            });
+
+            renderSlots();
+            renderCompareQueueList();
+            renderPresets();
+            closeQueueSelector();
+
+            if (photosToAdd.length < source.photos.length) {
+                alert(`已添加 ${photosToAdd.length} 张到${source.name}，组已满`);
+            } else {
+                alert(`已添加 ${photosToAdd.length} 张到${source.name}`);
+            }
+        }
+
+        function renderCompareQueueList() {
+            const container = document.getElementById('compare-queue-list');
+
+            if (selectedCompareQueues.length === 0) {
+                container.innerHTML = `
+                    <div class="compare-queue-empty" onclick="openQueueSelector()">
+                        <div class="icon">+</div>
+                        <div class="text">点击添加队列</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="selected-queues">
+                    ${selectedCompareQueues.map((item, index) => `
+                        <div class="selected-queue-item">
+                            <div class="selected-queue-preview">
+                                <img src="${item.photos[0]}" alt="${item.name}">
+                            </div>
+                            <div class="selected-queue-info">
+                                <div class="selected-queue-name">${item.name}</div>
+                                <div class="selected-queue-count">${item.photos.length}张</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                    ${hasEmptySlot() ? `
+                        <div class="compare-queue-empty small" onclick="openQueueSelector()">
+                            <div class="icon">+</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
         }
 
         // 键盘导航
