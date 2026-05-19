@@ -343,6 +343,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 12px;
+            gap: 12px;
         }
 
         .queue-name-input {
@@ -354,6 +355,10 @@
             padding: 4px 8px;
             border-radius: 4px;
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .queue-name-input:focus {
@@ -371,6 +376,7 @@
             font-size: 12px;
             cursor: pointer;
             flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .delete-queue-btn:hover {
