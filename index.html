@@ -1234,7 +1234,7 @@
                             <button class="add-preset-btn" onclick="addToPreset(${queue.id})">添加到预设</button>
                         ` : ''}
                     </div>
-                    <input type="file" id="file-input-${queue.id}" multiple accept="image/*" onchange="handleUpload(${queue.id}, this)">
+                    <input type="file" id="file-input-${queue.id}" multiple accept="image/jpeg,image/png,image/gif,image/webp" capture="environment" onchange="handleUpload(${queue.id}, this)">
                 </div>
             `}).join('');
         }
@@ -1270,39 +1270,84 @@
             document.getElementById(`file-input-${queueId}`).click();
         }
 
-        function handleUpload(queueId, input) {
+        async function handleUpload(queueId, input) {
             const queue = queues.find(q => q.id === queueId);
-            if (!queue) return;
+            if (!queue) {
+                console.error('Queue not found:', queueId);
+                return;
+            }
 
-            const files = input.files;
+            const files = Array.from(input.files);
+            console.log('Selected files:', files.length);
+
             const remaining = 5 - queue.photos.length;
 
             if (remaining <= 0) {
                 alert('队列已满');
+                input.value = '';
                 return;
             }
 
-            const toProcess = Math.min(files.length, remaining);
-            let processed = 0;
+            const toProcess = files.slice(0, remaining);
 
-            for (let i = 0; i < toProcess; i++) {
-                const file = files[i];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    queue.photos.push(e.target.result);
-                    processed++;
-                    if (processed === toProcess) {
-                        saveQueues();
-                        renderQueues();
-                        input.value = '';
+            // 显示加载中
+            const uploadBtn = input.parentElement.querySelector('.upload-placeholder');
+            if (uploadBtn) {
+                uploadBtn.innerHTML = '<div class="icon">⏳</div><div class="text">处理中...</div>';
+            }
+
+            try {
+                for (const file of toProcess) {
+                    console.log('Processing file:', file.name, file.type, file.size);
+
+                    // 检查文件类型
+                    if (!file.type.startsWith('image/')) {
+                        console.warn('Skipping non-image file:', file.name);
+                        continue;
                     }
-                };
-                reader.readAsDataURL(file);
-            }
 
-            if (files.length > remaining) {
-                alert(`最多只能上传${remaining}张图片`);
+                    // 检查文件大小（限制 5MB）
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert(`图片 ${file.name} 太大，已跳过（最大5MB）`);
+                        continue;
+                    }
+
+                    const dataUrl = await readFileAsDataURL(file);
+                    queue.photos.push(dataUrl);
+                }
+
+                saveQueues();
+                renderQueues();
+
+                if (files.length > remaining) {
+                    alert(`最多只能上传${remaining}张图片`);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('上传失败: ' + error.message);
+            } finally {
+                input.value = '';
             }
+        }
+
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    resolve(e.target.result);
+                };
+
+                reader.onerror = function(e) {
+                    reject(new Error('读取文件失败'));
+                };
+
+                reader.onabort = function() {
+                    reject(new Error('读取被取消'));
+                };
+
+                reader.readAsDataURL(file);
+            });
         }
 
         function removeFromQueue(queueId, photoIndex) {
