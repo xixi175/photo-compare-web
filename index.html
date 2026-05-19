@@ -353,48 +353,13 @@
             color: #333;
             padding: 4px 8px;
             border-radius: 4px;
-            width: 150px;
+            flex: 1;
         }
 
         .queue-name-input:focus {
             outline: none;
             background: #fff;
             box-shadow: 0 0 0 2px var(--primary);
-        }
-
-        .queue-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .target-select {
-            padding: 6px 12px;
-            border: 1px solid var(--gray-300);
-            border-radius: 6px;
-            font-size: 13px;
-            background: #fff;
-            cursor: pointer;
-        }
-
-        .add-compare-btn {
-            background: var(--success);
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .add-compare-btn:hover:not(:disabled) {
-            background: #218838;
-        }
-
-        .add-compare-btn:disabled {
-            background: var(--gray-400);
-            cursor: not-allowed;
         }
 
         .delete-queue-btn {
@@ -405,6 +370,7 @@
             border-radius: 6px;
             font-size: 12px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .delete-queue-btn:hover {
@@ -491,21 +457,6 @@
             align-items: center;
             font-size: 12px;
             color: var(--gray-600);
-        }
-
-        .add-preset-btn {
-            background: var(--warning);
-            color: #333;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .add-preset-btn:hover {
-            background: #e0a800;
         }
 
         input[type="file"] {
@@ -1494,20 +1445,12 @@
                 return;
             }
 
-            container.innerHTML = queues.map((queue, idx) => {
-                const hasSpace = hasEmptySlot();
-                const canAdd = hasSpace && queue.photos.length > 0;
-                return `
+            container.innerHTML = queues.map((queue, idx) => `
                 <div class="queue-item">
                     <div class="queue-header">
                         <input type="text" class="queue-name-input" value="${queue.name}"
                             onchange="updateQueueName(${queue.id}, this.value)">
-                        <div class="queue-actions">
-                            <button class="add-compare-btn" onclick="addToCompare(${queue.id})" ${canAdd ? '' : 'disabled'}>
-                                ${canAdd ? '添加对比' : (hasSpace ? '空队列' : '已满')}
-                            </button>
-                            <button class="delete-queue-btn" onclick="deleteQueue(${queue.id})">删除</button>
-                        </div>
+                        <button class="delete-queue-btn" onclick="deleteQueue(${queue.id})">删除</button>
                     </div>
                     <div class="queue-photos">
                         ${queue.photos.map((photo, pidx) => `
@@ -1530,13 +1473,10 @@
                     </div>
                     <div class="queue-footer">
                         <span>${queue.photos.length}/5 张照片</span>
-                        ${queue.photos.length > 0 ? `
-                            <button class="add-preset-btn" onclick="addToPreset(${queue.id})">添加到预设</button>
-                        ` : ''}
                     </div>
                     <input type="file" id="file-input-${queue.id}" multiple accept="image/*" onchange="handleUpload(${queue.id}, this)">
                 </div>
-            `}).join('');
+            `).join('');
         }
 
         function addQueue() {
