@@ -493,6 +493,21 @@
             color: var(--gray-600);
         }
 
+        .add-preset-btn {
+            background: var(--warning);
+            color: #333;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .add-preset-btn:hover {
+            background: #e0a800;
+        }
+
         input[type="file"] {
             display: none;
         }
@@ -1215,6 +1230,9 @@
                     </div>
                     <div class="queue-footer">
                         <span>${queue.photos.length}/5 张照片</span>
+                        ${queue.photos.length > 0 ? `
+                            <button class="add-preset-btn" onclick="addToPreset(${queue.id})">添加到预设</button>
+                        ` : ''}
                     </div>
                     <input type="file" id="file-input-${queue.id}" multiple accept="image/*" onchange="handleUpload(${queue.id}, this)">
                 </div>
@@ -1333,6 +1351,26 @@
                 currentModalIndex = photoIndex;
                 showImageModal(currentModalImages[currentModalIndex]);
             }
+        }
+
+        function addToPreset(queueId) {
+            const queue = queues.find(q => q.id === queueId);
+            if (!queue || queue.photos.length === 0) return;
+
+            const presetName = prompt('请输入预设组名称:', queue.name);
+            if (!presetName || presetName.trim() === '') return;
+
+            const newPreset = {
+                id: Date.now(),
+                name: presetName.trim(),
+                photos: [...queue.photos]
+            };
+
+            presetGroups.push(newPreset);
+            Storage.set('presetGroups', presetGroups);
+
+            renderPresets();
+            alert(`已添加预设组 "${presetName}"`);
         }
 
         // ==================== 预设组 ====================
