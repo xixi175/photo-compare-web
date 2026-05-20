@@ -806,6 +806,98 @@
             margin-bottom: 0;
         }
 
+        /* 二次确认弹窗 */
+        .confirm-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .confirm-modal-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .confirm-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #fff;
+            border-radius: 16px;
+            padding: 24px;
+            width: 90%;
+            max-width: 320px;
+            z-index: 2001;
+            display: none;
+            opacity: 0;
+            transition: all 0.3s;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .confirm-modal.active {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .confirm-modal-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .confirm-modal-content p {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .confirm-modal-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .confirm-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .confirm-btn.cancel {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .confirm-btn.cancel:hover {
+            background: var(--gray-300);
+        }
+
+        .confirm-btn.confirm {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+        }
+
+        .confirm-btn.confirm:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
         /* 移动端适配 */
         @media (max-width: 768px) {
             .container {
@@ -1243,6 +1335,19 @@
             </div>
             <div id="drawer-presets" class="drawer-panel">
                 <!-- 动态生成预设队列 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 二次确认弹窗 -->
+    <div class="confirm-modal-overlay" id="confirm-modal-overlay"></div>
+    <div class="confirm-modal" id="confirm-modal">
+        <div class="confirm-modal-content">
+            <h3>确认替换</h3>
+            <p id="confirm-modal-text"></p>
+            <div class="confirm-modal-buttons">
+                <button class="confirm-btn cancel" onclick="closeConfirmModal()">取消</button>
+                <button class="confirm-btn confirm" onclick="executeReplace()">确认</button>
             </div>
         </div>
     </div>
@@ -1914,6 +2019,7 @@
         // ==================== 队列选择浮层 ====================
         let selectedCompareQueues = []; // 已选择到对比队列的队列
         let currentReplaceSlot = -1; // 当前要替换的槽索引，-1表示添加模式
+        let pendingReplace = null; // 待执行的替换信息
 
         function openQueueSelector() {
             currentReplaceSlot = -1; // 设置为添加模式
@@ -2014,9 +2120,101 @@
                 // 添加模式
                 addQueueToCompare(id, type);
             } else {
-                // 替换模式
-                replaceQueue(id, type, currentReplaceSlot);
+                // 替换模式 - 显示确认弹窗
+                let source;
+                if (type === 'queue') {
+                    source = queues.find(q => q.id === id);
+                } else {
+                    source = presetGroups.find(g => g.id === id);
+                }
+
+                if (!source || source.photos.length === 0) {
+                    alert('队列为空');
+                    return;
+                }
+
+                const oldName = slotNames[currentReplaceSlot] || `对比组 ${currentReplaceSlot === 0 ? 'A' : 'B'}`;
+                const newName = source.name;
+
+                // 存储待执行的替换信息
+                pendingReplace = {
+                    id: id,
+                    type: type,
+                    slotIndex: currentReplaceSlot
+                };
+
+                // 显示确认弹窗
+                document.getElementById('confirm-modal-text').innerHTML =
+                    `确认将 <strong style="color: #333;">${oldName}</strong> 替换为 <strong style="color: var(--primary);">${newName}</strong>？`;
+                document.getElementById('confirm-modal-overlay').classList.add('active');
+                document.getElementById('confirm-modal').classList.add('active');
             }
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal-overlay').classList.remove('active');
+            document.getElementById('confirm-modal').classList.remove('active');
+            pendingReplace = null;
+        }
+
+        function executeReplace() {
+            if (!pendingReplace) return;
+
+            const { id, type, slotIndex } = pendingReplace;
+
+            let source;
+            if (type === 'queue') {
+                source = queues.find(q => q.id === id);
+            } else {
+                source = presetGroups.find(g => g.id === id);
+            }
+
+            if (!source || source.photos.length === 0) {
+                closeConfirmModal();
+                return;
+            }
+
+            // 执行替换
+            const photosToAdd = source.photos.slice(0, 5);
+            slots[slotIndex] = photosToAdd;
+            slotNames[slotIndex] = source.name;
+
+            // 更新已选择列表
+            const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
+            if (existingIndex >= 0) {
+                selectedCompareQueues[existingIndex] = {
+                    name: source.name,
+                    photos: photosToAdd,
+                    slot: slotIndex
+                };
+            } else {
+                selectedCompareQueues.push({
+                    name: source.name,
+                    photos: photosToAdd,
+                    slot: slotIndex
+                });
+            }
+
+            renderSlots();
+            renderCompareQueueList();
+
+            // 更新全屏对比显示
+            document.getElementById(`fullscreen-label-${slotIndex}`).textContent = source.name;
+            document.getElementById(`fullscreen-count-${slotIndex}`).textContent = `${photosToAdd.length}张`;
+            document.getElementById(`fullscreen-photos-${slotIndex}`).innerHTML = photosToAdd.map((photo, idx) => `
+                <div class="fullscreen-photo" onclick="previewSlotImage(${slotIndex}, ${idx})">
+                    <img src="${photo}" alt="照片">
+                </div>
+            `).join('');
+
+            // 关闭弹窗和列表
+            closeConfirmModal();
+            closeQueueSelector();
+
+            // 显示成功提示
+            setTimeout(() => {
+                alert(`已替换为 ${source.name}`);
+            }, 100);
         }
 
         function addQueueToCompare(id, type) {
@@ -2061,56 +2259,6 @@
             } else {
                 alert(`已添加 ${photosToAdd.length} 张到${source.name}`);
             }
-        }
-
-        function replaceQueue(id, type, slotIndex) {
-            let source;
-            if (type === 'queue') {
-                source = queues.find(q => q.id === id);
-            } else {
-                source = presetGroups.find(g => g.id === id);
-            }
-
-            if (!source || source.photos.length === 0) {
-                alert('队列为空');
-                return;
-            }
-
-            // 直接替换该槽的所有照片
-            const photosToAdd = source.photos.slice(0, 5);
-            slots[slotIndex] = photosToAdd;
-            slotNames[slotIndex] = source.name;
-
-            // 更新已选择列表
-            const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
-            if (existingIndex >= 0) {
-                selectedCompareQueues[existingIndex] = {
-                    name: source.name,
-                    photos: photosToAdd,
-                    slot: slotIndex
-                };
-            } else {
-                selectedCompareQueues.push({
-                    name: source.name,
-                    photos: photosToAdd,
-                    slot: slotIndex
-                });
-            }
-
-            renderSlots();
-            renderCompareQueueList();
-
-            // 更新全屏对比显示
-            document.getElementById(`fullscreen-label-${slotIndex}`).textContent = source.name;
-            document.getElementById(`fullscreen-count-${slotIndex}`).textContent = `${photosToAdd.length}张`;
-            document.getElementById(`fullscreen-photos-${slotIndex}`).innerHTML = photosToAdd.map((photo, idx) => `
-                <div class="fullscreen-photo" onclick="previewSlotImage(${slotIndex}, ${idx})">
-                    <img src="${photo}" alt="照片">
-                </div>
-            `).join('');
-
-            closeQueueSelector();
-            alert(`已替换为 ${source.name}`);
         }
 
         function renderCompareQueueList() {
