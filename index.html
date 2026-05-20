@@ -955,6 +955,21 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
+        .replace-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .replace-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
         .side-panel-content {
             flex: 1;
             overflow-y: auto;
@@ -1176,7 +1191,10 @@
             <div class="compare-side-panel">
                 <div class="side-panel-header">
                     <span id="fullscreen-label-0">对比组 A</span>
-                    <span id="fullscreen-count-0">0张</span>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="fullscreen-count-0">0张</span>
+                        <button class="replace-btn" onclick="openReplaceSelector(0)">替换</button>
+                    </div>
                 </div>
                 <div class="side-panel-content" id="fullscreen-photos-0">
                     <!-- 动态生成 -->
@@ -1188,7 +1206,10 @@
             <div class="compare-side-panel">
                 <div class="side-panel-header b">
                     <span id="fullscreen-label-1">对比组 B</span>
-                    <span id="fullscreen-count-1">0张</span>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="fullscreen-count-1">0张</span>
+                        <button class="replace-btn" onclick="openReplaceSelector(1)">替换</button>
+                    </div>
                 </div>
                 <div class="side-panel-content" id="fullscreen-photos-1">
                     <!-- 动态生成 -->
@@ -1209,7 +1230,7 @@
     <div class="queue-selector-overlay" id="queue-selector-overlay" onclick="closeQueueSelector()"></div>
     <div class="queue-selector-drawer" id="queue-selector-drawer">
         <div class="drawer-header">
-            <h3>选择队列</h3>
+            <h3 id="drawer-title">选择队列</h3>
             <button class="drawer-close" onclick="closeQueueSelector()">×</button>
         </div>
         <div class="drawer-tabs">
@@ -1892,8 +1913,21 @@
 
         // ==================== 队列选择浮层 ====================
         let selectedCompareQueues = []; // 已选择到对比队列的队列
+        let currentReplaceSlot = -1; // 当前要替换的槽索引，-1表示添加模式
 
         function openQueueSelector() {
+            currentReplaceSlot = -1; // 设置为添加模式
+            document.getElementById('drawer-title').textContent = '选择队列';
+            document.getElementById('queue-selector-overlay').classList.add('active');
+            document.getElementById('queue-selector-drawer').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            renderDrawerContent();
+        }
+
+        function openReplaceSelector(slotIndex) {
+            currentReplaceSlot = slotIndex; // 设置为替换模式
+            const slotName = slotNames[slotIndex] || `对比组 ${slotIndex === 0 ? 'A' : 'B'}`;
+            document.getElementById('drawer-title').textContent = `替换 ${slotName}`;
             document.getElementById('queue-selector-overlay').classList.add('active');
             document.getElementById('queue-selector-drawer').classList.add('active');
             document.body.style.overflow = 'hidden';
@@ -1915,6 +1949,9 @@
         }
 
         function renderDrawerContent() {
+            const isReplaceMode = currentReplaceSlot !== -1;
+            const actionText = isReplaceMode ? '替换' : '添加';
+
             // 渲染我的队列
             const myQueuesContainer = document.getElementById('drawer-my-queues');
 
@@ -1933,9 +1970,10 @@
                 // 只显示有照片的队列
                 const validQueues = queues.filter(q => q.photos.length > 0);
                 myQueuesContainer.innerHTML = validQueues.map(queue => {
-                    const hasSpace = hasEmptySlot();
+                    // 替换模式下始终可用，添加模式下需要检查空间
+                    const disabled = !isReplaceMode && !hasEmptySlot();
                     return `
-                    <div class="drawer-queue-item" onclick="addQueueToCompare(${queue.id}, 'queue')">
+                    <div class="drawer-queue-item" onclick="${disabled ? '' : `selectQueue(${queue.id}, 'queue')`}">
                         <div class="drawer-queue-preview">
                             <img src="${queue.photos[0]}" alt="">
                         </div>
@@ -1943,8 +1981,8 @@
                             <div class="drawer-queue-name">${queue.name}</div>
                             <div class="drawer-queue-count">${queue.photos.length} 张照片</div>
                         </div>
-                        <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${queue.id}, 'queue')" ${!hasSpace ? 'disabled' : ''}>
-                            ${hasSpace ? '添加' : '已满'}
+                        <button class="drawer-queue-add" onclick="event.stopPropagation(); selectQueue(${queue.id}, 'queue')" ${disabled ? 'disabled' : ''}>
+                            ${actionText}
                         </button>
                     </div>
                 `}).join('');
@@ -1953,9 +1991,10 @@
             // 渲染预设队列
             const presetsContainer = document.getElementById('drawer-presets');
             presetsContainer.innerHTML = presetGroups.map(group => {
-                const hasSpace = hasEmptySlot();
+                // 替换模式下始终可用，添加模式下需要检查空间
+                const disabled = !isReplaceMode && !hasEmptySlot();
                 return `
-                <div class="drawer-queue-item" onclick="addQueueToCompare(${group.id}, 'preset')">
+                <div class="drawer-queue-item" onclick="${disabled ? '' : `selectQueue(${group.id}, 'preset')`}">
                     <div class="drawer-queue-preview">
                         <img src="${group.photos[0]}" alt="${group.name}">
                     </div>
@@ -1963,11 +2002,21 @@
                         <div class="drawer-queue-name">${group.name}</div>
                         <div class="drawer-queue-count">${group.photos.length} 张照片</div>
                     </div>
-                    <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${group.id}, 'preset')" ${!hasSpace ? 'disabled' : ''}>
-                        ${hasSpace ? '添加' : '已满'}
+                    <button class="drawer-queue-add" onclick="event.stopPropagation(); selectQueue(${group.id}, 'preset')" ${disabled ? 'disabled' : ''}>
+                        ${actionText}
                     </button>
                 </div>
             `}).join('');
+        }
+
+        function selectQueue(id, type) {
+            if (currentReplaceSlot === -1) {
+                // 添加模式
+                addQueueToCompare(id, type);
+            } else {
+                // 替换模式
+                replaceQueue(id, type, currentReplaceSlot);
+            }
         }
 
         function addQueueToCompare(id, type) {
@@ -2012,6 +2061,56 @@
             } else {
                 alert(`已添加 ${photosToAdd.length} 张到${source.name}`);
             }
+        }
+
+        function replaceQueue(id, type, slotIndex) {
+            let source;
+            if (type === 'queue') {
+                source = queues.find(q => q.id === id);
+            } else {
+                source = presetGroups.find(g => g.id === id);
+            }
+
+            if (!source || source.photos.length === 0) {
+                alert('队列为空');
+                return;
+            }
+
+            // 直接替换该槽的所有照片
+            const photosToAdd = source.photos.slice(0, 5);
+            slots[slotIndex] = photosToAdd;
+            slotNames[slotIndex] = source.name;
+
+            // 更新已选择列表
+            const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
+            if (existingIndex >= 0) {
+                selectedCompareQueues[existingIndex] = {
+                    name: source.name,
+                    photos: photosToAdd,
+                    slot: slotIndex
+                };
+            } else {
+                selectedCompareQueues.push({
+                    name: source.name,
+                    photos: photosToAdd,
+                    slot: slotIndex
+                });
+            }
+
+            renderSlots();
+            renderCompareQueueList();
+
+            // 更新全屏对比显示
+            document.getElementById(`fullscreen-label-${slotIndex}`).textContent = source.name;
+            document.getElementById(`fullscreen-count-${slotIndex}`).textContent = `${photosToAdd.length}张`;
+            document.getElementById(`fullscreen-photos-${slotIndex}`).innerHTML = photosToAdd.map((photo, idx) => `
+                <div class="fullscreen-photo" onclick="previewSlotImage(${slotIndex}, ${idx})">
+                    <img src="${photo}" alt="照片">
+                </div>
+            `).join('');
+
+            closeQueueSelector();
+            alert(`已替换为 ${source.name}`);
         }
 
         function renderCompareQueueList() {
