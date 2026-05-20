@@ -1917,27 +1917,34 @@
         function renderDrawerContent() {
             // 渲染我的队列
             const myQueuesContainer = document.getElementById('drawer-my-queues');
-            if (queues.length === 0) {
+
+            // 检查是否有可用的队列（至少一个队列且有照片）
+            const hasValidQueue = queues.some(q => q.photos.length > 0);
+
+            if (queues.length === 0 || !hasValidQueue) {
                 myQueuesContainer.innerHTML = `
                     <div class="empty-state" style="padding: 40px 20px;">
                         <div class="icon">📋</div>
-                        <div class="text">暂无队列，请到队列页面创建</div>
+                        <div class="text">暂无队列</div>
+                        <div style="font-size: 13px; color: #999; margin-top: 8px;">请到队列页面创建并上传照片</div>
                     </div>
                 `;
             } else {
-                myQueuesContainer.innerHTML = queues.map(queue => {
+                // 只显示有照片的队列
+                const validQueues = queues.filter(q => q.photos.length > 0);
+                myQueuesContainer.innerHTML = validQueues.map(queue => {
                     const hasSpace = hasEmptySlot();
                     return `
                     <div class="drawer-queue-item" onclick="addQueueToCompare(${queue.id}, 'queue')">
                         <div class="drawer-queue-preview">
-                            ${queue.photos.length > 0 ? `<img src="${queue.photos[0]}" alt="">` : '<div class="placeholder">📷</div>'}
+                            <img src="${queue.photos[0]}" alt="">
                         </div>
                         <div class="drawer-queue-info">
                             <div class="drawer-queue-name">${queue.name}</div>
                             <div class="drawer-queue-count">${queue.photos.length} 张照片</div>
                         </div>
-                        <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${queue.id}, 'queue')" ${!hasSpace || queue.photos.length === 0 ? 'disabled' : ''}>
-                            ${hasSpace && queue.photos.length > 0 ? '添加' : '已满'}
+                        <button class="drawer-queue-add" onclick="event.stopPropagation(); addQueueToCompare(${queue.id}, 'queue')" ${!hasSpace ? 'disabled' : ''}>
+                            ${hasSpace ? '添加' : '已满'}
                         </button>
                     </div>
                 `}).join('');
