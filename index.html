@@ -1559,6 +1559,9 @@
                 const countEl = document.getElementById(`count-${i}`);
                 const labelEl = document.getElementById(`slot-label-${i}`);
 
+                // 如果元素不存在（如在全屏模式），跳过渲染
+                if (!slotEl || !photosEl || !countEl || !labelEl) continue;
+
                 countEl.textContent = `${slots[i].length}/5`;
                 labelEl.textContent = slotNames[i] || `对比组 ${i === 0 ? 'A' : 'B'}`;
 
@@ -1989,6 +1992,7 @@
 
         function renderPresets() {
             const container = document.getElementById('preset-groups');
+            if (!container) return;
             const hasSpace = hasEmptySlot();
 
             container.innerHTML = presetGroups.map(group => {
@@ -2188,8 +2192,10 @@
         }
 
         function closeQueueSelector() {
-            document.getElementById('queue-selector-overlay').classList.remove('active');
-            document.getElementById('queue-selector-drawer').classList.remove('active');
+            const overlay = document.getElementById('queue-selector-overlay');
+            const drawer = document.getElementById('queue-selector-drawer');
+            if (overlay) overlay.classList.remove('active');
+            if (drawer) drawer.classList.remove('active');
             document.body.style.overflow = '';
         }
 
@@ -2307,61 +2313,73 @@
         function executeReplace() {
             if (!pendingReplace) return;
 
-            const { id, type, slotIndex } = pendingReplace;
+            try {
+                const { id, type, slotIndex } = pendingReplace;
 
-            let source;
-            if (type === 'queue') {
-                source = queues.find(q => q.id === id);
-            } else {
-                source = presetGroups.find(g => g.id === id);
-            }
+                let source;
+                if (type === 'queue') {
+                    source = queues.find(q => q.id === id);
+                } else {
+                    source = presetGroups.find(g => g.id === id);
+                }
 
-            if (!source || source.photos.length === 0) {
+                if (!source || source.photos.length === 0) {
+                    closeConfirmModal();
+                    return;
+                }
+
+                // 执行替换
+                const photosToAdd = source.photos.slice(0, 5);
+                slots[slotIndex] = photosToAdd;
+                slotNames[slotIndex] = source.name;
+
+                // 更新已选择列表
+                const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
+                if (existingIndex >= 0) {
+                    selectedCompareQueues[existingIndex] = {
+                        name: source.name,
+                        photos: photosToAdd,
+                        slot: slotIndex
+                    };
+                } else {
+                    selectedCompareQueues.push({
+                        name: source.name,
+                        photos: photosToAdd,
+                        slot: slotIndex
+                    });
+                }
+
+                renderSlots();
+                renderPresets();
+
+                // 更新全屏对比显示
+                const labelEl = document.getElementById(`fullscreen-label-${slotIndex}`);
+                const countEl = document.getElementById(`fullscreen-count-${slotIndex}`);
+                const photosEl = document.getElementById(`fullscreen-photos-${slotIndex}`);
+
+                if (labelEl) labelEl.textContent = source.name;
+                if (countEl) countEl.textContent = `${photosToAdd.length}张`;
+                if (photosEl) {
+                    photosEl.innerHTML = photosToAdd.map((photo, idx) => `
+                        <div class="fullscreen-photo" onclick="previewSlotImage(${slotIndex}, ${idx})">
+                            <img src="${photo}" alt="照片">
+                        </div>
+                    `).join('');
+                }
+
+                // 关闭弹窗和列表
                 closeConfirmModal();
-                return;
+                closeQueueSelector();
+
+                // 显示成功提示
+                setTimeout(() => {
+                    alert(`已替换为 ${source.name}`);
+                }, 100);
+            } catch (error) {
+                console.error('替换失败:', error);
+                alert('替换失败，请重试');
+                closeConfirmModal();
             }
-
-            // 执行替换
-            const photosToAdd = source.photos.slice(0, 5);
-            slots[slotIndex] = photosToAdd;
-            slotNames[slotIndex] = source.name;
-
-            // 更新已选择列表
-            const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
-            if (existingIndex >= 0) {
-                selectedCompareQueues[existingIndex] = {
-                    name: source.name,
-                    photos: photosToAdd,
-                    slot: slotIndex
-                };
-            } else {
-                selectedCompareQueues.push({
-                    name: source.name,
-                    photos: photosToAdd,
-                    slot: slotIndex
-                });
-            }
-
-            renderSlots();
-            renderCompareQueueList();
-
-            // 更新全屏对比显示
-            document.getElementById(`fullscreen-label-${slotIndex}`).textContent = source.name;
-            document.getElementById(`fullscreen-count-${slotIndex}`).textContent = `${photosToAdd.length}张`;
-            document.getElementById(`fullscreen-photos-${slotIndex}`).innerHTML = photosToAdd.map((photo, idx) => `
-                <div class="fullscreen-photo" onclick="previewSlotImage(${slotIndex}, ${idx})">
-                    <img src="${photo}" alt="照片">
-                </div>
-            `).join('');
-
-            // 关闭弹窗和列表
-            closeConfirmModal();
-            closeQueueSelector();
-
-            // 显示成功提示
-            setTimeout(() => {
-                alert(`已替换为 ${source.name}`);
-            }, 100);
         }
 
         function addQueueToCompare(id, type) {
@@ -2408,6 +2426,7 @@
 
         function renderCompareQueueList() {
             const container = document.getElementById('compare-queue-list');
+            if (!container) return;
 
             if (selectedCompareQueues.length === 0) {
                 container.innerHTML = `
