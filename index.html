@@ -538,6 +538,87 @@
             box-shadow: none;
         }
 
+        /* 直接队列列表 */
+        .direct-queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .direct-queue-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--gray-100);
+            border-radius: 12px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .direct-queue-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .direct-queue-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .direct-queue-preview .placeholder {
+            font-size: 24px;
+        }
+
+        .direct-queue-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .direct-queue-name {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .direct-queue-count {
+            font-size: 13px;
+            color: var(--gray-500);
+        }
+
+        .direct-queue-add-btn {
+            padding: 8px 16px;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .direct-queue-add-btn:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .direct-queue-add-btn:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* 对比队列区域 */
         .compare-queue-list {
             min-height: 100px;
@@ -1218,14 +1299,19 @@
                 </button>
             </div>
 
-            <!-- 对比队列 -->
+            <!-- 我的队列 -->
+            <div class="card" id="my-queues-section">
+                <div class="section-title">我的队列</div>
+                <div class="direct-queue-list" id="direct-my-queues">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <!-- 预设队列 -->
             <div class="card">
-                <div class="section-title">对比队列</div>
-                <div class="compare-queue-list" id="compare-queue-list">
-                    <div class="compare-queue-empty" onclick="openQueueSelector()">
-                        <div class="icon">+</div>
-                        <div class="text">点击添加队列</div>
-                    </div>
+                <div class="section-title">预设队列</div>
+                <div class="direct-queue-list" id="direct-preset-queues">
+                    <!-- 动态生成 -->
                 </div>
             </div>
         </div>
@@ -1505,8 +1591,69 @@
                 compareBtn.disabled = !canCompare;
             }
 
+            // 渲染直接队列列表
+            renderDirectQueues();
+
             Storage.set('compareSlots', slots);
             Storage.set('slotNames', slotNames);
+        }
+
+        // 渲染首页直接队列列表
+        function renderDirectQueues() {
+            const hasSpace = hasEmptySlot();
+
+            // 渲染我的队列
+            const myQueuesContainer = document.getElementById('direct-my-queues');
+            const myQueuesSection = document.getElementById('my-queues-section');
+
+            if (queues.length === 0) {
+                if (myQueuesSection) myQueuesSection.style.display = 'none';
+            } else {
+                if (myQueuesSection) myQueuesSection.style.display = 'block';
+                const validQueues = queues.filter(q => q.photos.length > 0);
+
+                if (validQueues.length === 0) {
+                    myQueuesContainer.innerHTML = `
+                        <div class="empty-state" style="padding: 30px;">
+                            <div class="text" style="font-size: 14px;">暂无照片，请到队列页面上传</div>
+                        </div>
+                    `;
+                } else {
+                    myQueuesContainer.innerHTML = validQueues.map(queue => `
+                        <div class="direct-queue-item">
+                            <div class="direct-queue-preview">
+                                <img src="${queue.photos[0]}" alt="${queue.name}">
+                            </div>
+                            <div class="direct-queue-info">
+                                <div class="direct-queue-name">${queue.name}</div>
+                                <div class="direct-queue-count">${queue.photos.length} 张照片</div>
+                            </div>
+                            <button class="direct-queue-add-btn" onclick="addQueueToCompare(${queue.id}, 'queue')" ${!hasSpace ? 'disabled' : ''}>
+                                ${hasSpace ? '添加' : '已满'}
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 渲染预设队列
+            const presetContainer = document.getElementById('direct-preset-queues');
+            if (presetContainer) {
+                presetContainer.innerHTML = presetGroups.map(group => `
+                    <div class="direct-queue-item">
+                        <div class="direct-queue-preview">
+                            <img src="${group.photos[0]}" alt="${group.name}">
+                        </div>
+                        <div class="direct-queue-info">
+                            <div class="direct-queue-name">${group.name}</div>
+                            <div class="direct-queue-count">${group.photos.length} 张照片</div>
+                        </div>
+                        <button class="direct-queue-add-btn" onclick="addQueueToCompare(${group.id}, 'preset')" ${!hasSpace ? 'disabled' : ''}>
+                            ${hasSpace ? '添加' : '已满'}
+                        </button>
+                    </div>
+                `).join('');
+            }
         }
 
         function removeFromSlot(slotIndex, photoIndex) {
@@ -2250,9 +2397,7 @@
             });
 
             renderSlots();
-            renderCompareQueueList();
             renderPresets();
-            closeQueueSelector();
 
             if (photosToAdd.length < source.photos.length) {
                 alert(`已添加 ${photosToAdd.length} 张到${source.name}，组已满`);
