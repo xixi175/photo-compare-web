@@ -2311,15 +2311,10 @@
         }
 
         function executeReplace() {
-            alert('executeReplace 开始执行');
-            if (!pendingReplace) {
-                alert('pendingReplace 为空');
-                return;
-            }
+            if (!pendingReplace) return;
 
             try {
                 const { id, type, slotIndex } = pendingReplace;
-                alert(`参数: id=${id}, type=${type}, slotIndex=${slotIndex}`);
 
                 let source;
                 if (type === 'queue') {
@@ -2329,19 +2324,14 @@
                 }
 
                 if (!source || source.photos.length === 0) {
-                    alert('source 为空或没有照片');
                     closeConfirmModal();
                     return;
                 }
-
-                alert(`找到 source: ${source.name}, 照片数: ${source.photos.length}`);
 
                 // 执行替换
                 const photosToAdd = source.photos.slice(0, 5);
                 slots[slotIndex] = photosToAdd;
                 slotNames[slotIndex] = source.name;
-
-                alert('开始更新已选择列表');
 
                 // 更新已选择列表
                 const existingIndex = selectedCompareQueues.findIndex(q => q.slot === slotIndex);
@@ -2359,12 +2349,9 @@
                     });
                 }
 
-                alert('开始 renderSlots');
                 renderSlots();
-                alert('开始 renderPresets');
                 renderPresets();
 
-                alert('开始更新全屏显示');
                 // 更新全屏对比显示
                 const labelEl = document.getElementById(`fullscreen-label-${slotIndex}`);
                 const countEl = document.getElementById(`fullscreen-count-${slotIndex}`);
@@ -2380,19 +2367,17 @@
                     `).join('');
                 }
 
-                alert('开始关闭弹窗');
                 // 关闭弹窗和列表
                 closeConfirmModal();
                 closeQueueSelector();
 
-                alert('替换成功');
                 // 显示成功提示
                 setTimeout(() => {
                     alert(`已替换为 ${source.name}`);
                 }, 100);
             } catch (error) {
-                alert('出错了: ' + error.message);
                 console.error('替换失败:', error);
+                alert('替换失败，请重试');
                 closeConfirmModal();
             }
         }
