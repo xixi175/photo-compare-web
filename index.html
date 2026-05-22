@@ -979,6 +979,30 @@
             transform: translateY(-1px);
         }
 
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .toast.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
         /* 移动端适配 */
         @media (max-width: 768px) {
             .container {
@@ -1437,6 +1461,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast 提示 -->
+    <div class="toast" id="toast"></div>
 
     <script>
         // ==================== 数据存储 ====================
@@ -1942,9 +1969,9 @@
             renderQueues(); // 更新队列按钮状态
 
             if (queue.photos.length > availableSpace) {
-                alert(`已添加${availableSpace}张到${queue.name}，组已满`);
+                showToast(`${queue.name} 添加成功，组已满`);
             } else {
-                alert(`已添加${photosToAdd.length}张到${queue.name}`);
+                showToast(`${queue.name} 添加成功`);
                 // 添加成功后切换到首页
                 switchPage('home', document.querySelector('.tab-item'));
             }
@@ -1976,7 +2003,7 @@
             Storage.set('presetGroups', presetGroups);
 
             renderPresets();
-            alert(`已添加预设组 "${presetName}"`);
+            showToast(`${presetName} 添加成功`);
         }
 
         // ==================== 预设组 ====================
@@ -2056,9 +2083,9 @@
             renderPresetsList();
 
             if (photosToAdd.length < group.photos.length) {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+                showToast(`${group.name} 添加成功，组已满`);
             } else {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+                showToast(`${group.name} 添加成功`);
             }
         }
 
@@ -2083,9 +2110,9 @@
             renderPresets(); // 重新渲染预设组以更新按钮状态
 
             if (photosToAdd.length < group.photos.length) {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+                showToast(`${group.name} 添加成功，组已满`);
             } else {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+                showToast(`${group.name} 添加成功`);
             }
         }
 
@@ -2109,9 +2136,9 @@
             renderPresets();
 
             if (photosToAdd.length < group.photos.length) {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}，组已满`);
+                showToast(`${group.name} 添加成功，组已满`);
             } else {
-                alert(`已添加 ${photosToAdd.length} 张照片到${group.name}`);
+                showToast(`${group.name} 添加成功`);
             }
         }
 
@@ -2310,6 +2337,15 @@
             pendingReplace = null;
         }
 
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
         function executeReplace() {
             if (!pendingReplace) return;
 
@@ -2372,9 +2408,7 @@
                 closeQueueSelector();
 
                 // 显示成功提示
-                setTimeout(() => {
-                    alert(`已替换为 ${source.name}`);
-                }, 100);
+                showToast(`${source.name} 替换成功`);
             } catch (error) {
                 console.error('替换失败:', error);
                 alert('替换失败，请重试');
@@ -2418,9 +2452,9 @@
             renderPresets();
 
             if (photosToAdd.length < source.photos.length) {
-                alert(`已添加 ${photosToAdd.length} 张到${source.name}，组已满`);
+                showToast(`${source.name} 添加成功，组已满`);
             } else {
-                alert(`已添加 ${photosToAdd.length} 张到${source.name}`);
+                showToast(`${source.name} 添加成功`);
             }
         }
 
