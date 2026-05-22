@@ -1280,7 +1280,7 @@
 
     <div class="container">
         <!-- 首页 -->
-        <div id="page-home" class="page active">
+        <div id="page-home" class="page active" style="display: flex; flex-direction: column;">
             <!-- 对比区域 -->
             <div class="card">
                 <div class="section-title">对比区域</div>
@@ -1332,7 +1332,7 @@
             </div>
 
             <!-- 预设队列 -->
-            <div class="card">
+            <div class="card" id="preset-queues-section">
                 <div class="section-title">预设队列</div>
                 <div class="direct-queue-list" id="direct-preset-queues">
                     <!-- 动态生成 -->
@@ -1668,6 +1668,21 @@
             // 渲染我的队列
             const myQueuesContainer = document.getElementById('direct-my-queues');
             const myQueuesSection = document.getElementById('my-queues-section');
+            const presetQueuesSection = document.getElementById('preset-queues-section');
+
+            // 判断我的队列是否有有效内容
+            const hasValidQueues = queues.length > 0 && queues.some(q => q.photos.length > 0);
+
+            // 调整显示顺序：有内容时我的队列在前，无内容时预设队列在前
+            if (myQueuesSection && presetQueuesSection) {
+                if (hasValidQueues) {
+                    myQueuesSection.style.order = '1';
+                    presetQueuesSection.style.order = '2';
+                } else {
+                    myQueuesSection.style.order = '2';
+                    presetQueuesSection.style.order = '1';
+                }
+            }
 
             if (queues.length === 0) {
                 if (myQueuesSection) myQueuesSection.style.display = 'none';
